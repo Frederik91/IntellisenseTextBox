@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29728.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartTextBox", "SmartTextBox\SmartTextBox.csproj", "{95D11E55-1810-46B9-9289-48910E1548AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartTextBox", "SmartTextBox\SmartTextBox.csproj", "{95D11E55-1810-46B9-9289-48910E1548AF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{90D5F0AE-736D-47AB-8392-17A33870F1AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartTestBox.Demo", "SmartTestBox.Demo\SmartTestBox.Demo.csproj", "{F6BC775E-857C-4574-B272-1A9750CEE3EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,9 +19,16 @@ Global
 		{95D11E55-1810-46B9-9289-48910E1548AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{95D11E55-1810-46B9-9289-48910E1548AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{95D11E55-1810-46B9-9289-48910E1548AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6BC775E-857C-4574-B272-1A9750CEE3EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6BC775E-857C-4574-B272-1A9750CEE3EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6BC775E-857C-4574-B272-1A9750CEE3EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6BC775E-857C-4574-B272-1A9750CEE3EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F6BC775E-857C-4574-B272-1A9750CEE3EB} = {90D5F0AE-736D-47AB-8392-17A33870F1AF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D46512D0-6B10-49AB-B61C-2FE0C1C1E580}
