@@ -45,7 +45,7 @@ A text box that supports objects.
 * ListItemTemplate: Overrides the data template for list items in intellisense popup.
  ```xml 
 <controls:IntellisenseTextBox>
-  <controls:IntellisenseTextBox.ItemTemplate>
+  <controls:IntellisenseTextBox.ListItemTemplate>
       <DataTemplate>
           <Border CornerRadius="2"
                   Margin="0,1,0,-3"
@@ -57,7 +57,7 @@ A text box that supports objects.
               <TextBlock Text="{Binding DisplayText}"></TextBlock>
           </Border>
       </DataTemplate>
-  </controls:IntellisenseTextBox.ItemTemplate>
+  </controls:IntellisenseTextBox.ListItemTemplate>
 </controls:IntellisenseTextBox>
   ```
   
