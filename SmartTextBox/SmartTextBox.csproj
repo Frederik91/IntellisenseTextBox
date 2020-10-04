@@ -7,9 +7,16 @@
     <NoWarn>NU1701</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="MvvmLightLibs" Version="5.4.1.1" />
-  </ItemGroup>
+  <PropertyGroup>
+    <PackageId>IntellisenseTextBox</PackageId>
+    <PackageProjectUrl>https://github.com/Frederik91/IntellisenseTextBox</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Frederik91/IntellisenseTextBox</RepositoryUrl>
+    <Authors>Frederik91</Authors>
+    <Version>1.0.0</Version>
+    <Product>IntellisenseTextBox</Product>
+    <Description>A text box control with intellisense behavior</Description>
+    <PackageTags>TextBox;Intellisense</PackageTags>
+  </PropertyGroup>
 
   <ItemGroup>
     <Page Update="IntellisenseItemDetailsControl\IntellisenseItemDetailsStyle.xaml">

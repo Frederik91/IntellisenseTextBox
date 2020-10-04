@@ -1,8 +1,6 @@
-﻿using GalaSoft.MvvmLight;
-
-namespace SmartTestBox.Demo
+﻿namespace SmartTestBox.Demo
 {
-    public class ItemViewModel : ViewModelBase
+    public class ItemViewModel
     {
         public string DisplayText { get; set; }
         public string Group { get; }
