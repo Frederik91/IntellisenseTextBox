@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>netcoreapp3.1;net47</TargetFrameworks>
     <UseWPF>true</UseWPF>
+    <LangVersion>8.0</LangVersion>
     <NoWarn>NU1701</NoWarn>
   </PropertyGroup>
 
