@@ -46,7 +46,7 @@ A text box that supports objects.
  ```xml 
 <controls:IntellisenseTextBox>
   <controls:IntellisenseTextBox.ItemTemplate>
-      <DataTemplate DataType="demo:ItemViewModel">
+      <DataTemplate>
           <Border CornerRadius="2"
                   Margin="0,1,0,-3"
                   Padding="2,0,2,0"
@@ -80,7 +80,7 @@ A text box that supports objects.
  ```xml 
 <controls:IntellisenseTextBox>
     <controls:IntellisenseTextBox.ItemTemplate>
-        <DataTemplate DataType="demo:ItemViewModel">
+        <DataTemplate>
             <Border CornerRadius="2"
                     Margin="0,1,0,-3"
                     Padding="2,0,2,0"
@@ -100,7 +100,7 @@ A text box that supports objects.
 <controls:IntellisenseTextBox>
   <controls:IntellisenseTextBox.DetailItemTemplate>
     <controls:IntellisenseTextBox.DetailItemTemplate>
-        <DataTemplate DataType="demo:ItemViewModel">
+        <DataTemplate>
             <Grid Background="White">
                 <TextBlock Text="{Binding DisplayText}"></TextBlock>
             </Grid>
