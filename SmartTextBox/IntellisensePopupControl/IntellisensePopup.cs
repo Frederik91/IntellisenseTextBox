@@ -44,8 +44,10 @@ namespace SmartTextBox.IntellisensePopupControl
         private ListView _itemsListView;
         private Popup _popup;
         private IEnumerable<GroupStyle> _groupStyles;
+        private bool _disableItemSelectedFlag;
 
         public Func<string, List<object>> SearchFunction { get; set; }
+        public Action<object> ItemSelectedAction { get; set; }
 
         static IntellisensePopup()
         {
@@ -61,14 +63,22 @@ namespace SmartTextBox.IntellisensePopupControl
         {
             if (IsOpen && _itemsListView != null)
             {
-                var count = _itemsListView.ItemsSource.OfType<object>().Count();
-                if (e.Key == Key.Down && _itemsListView.SelectedIndex < count - 1)
-                    _itemsListView.SelectedIndex++;
-                else if (e.Key == Key.Up && _itemsListView.SelectedIndex > 0)
-                    _itemsListView.SelectedIndex--;
+                try
+                {
+                    _disableItemSelectedFlag = true;
+                    var count = _itemsListView.ItemsSource.OfType<object>().Count();
+                    if (e.Key == Key.Down && _itemsListView.SelectedIndex < count - 1)
+                        _itemsListView.SelectedIndex++;
+                    else if (e.Key == Key.Up && _itemsListView.SelectedIndex > 0)
+                        _itemsListView.SelectedIndex--;
 
-                if (count == 0)
-                    IsOpen = false;
+                    if (count == 0)
+                        IsOpen = false;
+                }
+                finally
+                {
+                    _disableItemSelectedFlag = false;
+                }
             }
 
 
@@ -78,10 +88,19 @@ namespace SmartTextBox.IntellisensePopupControl
         public override void OnApplyTemplate()
         {
             _itemsListView = Template.FindName("PART_ItemsListView", this) as ListView;
+            _itemsListView.SelectionChanged += (s, e) => SelectionChanged();
             UpdateGroupStyle(_groupStyles);
             _popup = Template.FindName("PART_Popup", this) as Popup;
             SubscribeToMoveWithWindow();
             base.OnApplyTemplate();
+        }
+
+        private void SelectionChanged()
+        {
+            if (_itemsListView?.SelectedItem is null || ItemSelectedAction is null || _disableItemSelectedFlag)
+                return;
+
+            ItemSelectedAction?.Invoke(_itemsListView.SelectedItem);
         }
 
         private void SubscribeToMoveWithWindow()

@@ -44,6 +44,7 @@ namespace SmartTextBox.IntellisenseItemControl
         {
             _itemDetails.IsOpen = true;
             _itemDetails.Focus();
+            rectangle.Offset(100,100);
             _itemDetails.PopupPlacementRectangle = rectangle;
             _itemDetails.PopupPlacementTarget = this;
         }

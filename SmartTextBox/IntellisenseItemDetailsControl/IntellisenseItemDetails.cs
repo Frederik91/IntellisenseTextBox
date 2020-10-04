@@ -29,6 +29,8 @@ namespace SmartTextBox.IntellisenseItemDetailsControl
         public static readonly DependencyProperty PopupPlacementRectangleProperty = DependencyProperty.Register(
             "PopupPlacementRectangle", typeof(Rect), typeof(IntellisenseItemDetails), new PropertyMetadata(default(Rect)));
 
+        private Popup _popup;
+
         public Rect PopupPlacementRectangle
         {
             get { return (Rect)GetValue(PopupPlacementRectangleProperty); }
@@ -42,14 +44,36 @@ namespace SmartTextBox.IntellisenseItemDetailsControl
 
         public override void OnApplyTemplate()
         {
-            var popup = Template.FindName("PART_Popup", this) as Popup;
-            popup.MouseLeave += PopupOnMouseLeave;
+            _popup = Template.FindName("PART_Popup", this) as Popup;
+            _popup.Placement = PlacementMode.Top;
+            SubscribeToMoveWithWindow();
             base.OnApplyTemplate();
         }
 
-        private void PopupOnMouseLeave(object sender, MouseEventArgs e)
+        private void SubscribeToMoveWithWindow()
         {
-            
+            var w = Window.GetWindow(this);
+            // w should not be Null now!
+            if (null != w)
+            {
+                w.LocationChanged += delegate
+                {
+                    var offset = _popup.HorizontalOffset;
+                    // "bump" the offset to cause the popup to reposition itself
+                    //   on its own
+                    _popup.HorizontalOffset = offset + 1;
+                    _popup.HorizontalOffset = offset;
+                };
+                // Also handle the window being resized (so the popup's position stays
+                //  relative to its target element if the target element moves upon 
+                //  window resize)
+                w.SizeChanged += delegate
+                {
+                    var offset = _popup.HorizontalOffset;
+                    _popup.HorizontalOffset = offset + 1;
+                    _popup.HorizontalOffset = offset;
+                };
+            }
         }
 
         public void Close()

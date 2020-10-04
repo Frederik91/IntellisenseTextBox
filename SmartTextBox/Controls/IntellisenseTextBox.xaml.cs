@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -199,20 +200,25 @@ namespace SmartTextBox.Controls
         }
 
 
-        private void EvaluateShowPopup()
+        private void EvaluateShowPopup(KeyEventArgs args)
         {
             var start = RichTextBox.CaretPosition;
             var stringBeforeCaret = start.GetTextInRun(LogicalDirection.Backward);
-
-            if (!stringBeforeCaret.Contains(IntellisenseTrigger))
+            if (!stringBeforeCaret.Contains(IntellisenseTrigger) || args.Key == Key.Escape)
             {
                 IntellisensePopup.Close();
                 return;
             }
-
+            
             var searchText = GetSearchText(stringBeforeCaret);
             if (SearchText != searchText)
                 SearchText = searchText;
+
+            if (searchText.StartsWith(" "))
+            {
+                IntellisensePopup.Close();
+                return;
+            }
 
             var rect = RichTextBox.CaretPosition.GetCharacterRect(LogicalDirection.Backward);
             IntellisensePopup.Show(rect);
@@ -282,6 +288,13 @@ namespace SmartTextBox.Controls
             IntellisensePopup.Close();
             RichTextBox.CaretPosition = newItem.ContentEnd;
             RaiseSegmentsChangedEvent();
+            SetFocusAfterDelay();
+        }
+
+        private async void SetFocusAfterDelay()
+        {
+            await Task.Delay(100);
+            RichTextBox.Focus();
         }
 
         private string GetSearchText(string stringBeforeCaret)
@@ -289,7 +302,7 @@ namespace SmartTextBox.Controls
             if (stringBeforeCaret.EndsWith(IntellisenseTrigger))
                 return string.Empty;
 
-            return stringBeforeCaret.Remove(0, stringBeforeCaret.IndexOf(IntellisenseTrigger, StringComparison.InvariantCulture) + 1).TrimStart();
+            return stringBeforeCaret.Remove(0, stringBeforeCaret.IndexOf(IntellisenseTrigger, StringComparison.InvariantCulture) + 1);
         }
 
         public IntellisenseTextBox()
@@ -298,16 +311,30 @@ namespace SmartTextBox.Controls
             InitializeComponent();
             IntellisensePopup.PopupPlacementTarget = this;
             IntellisensePopup.UpdateGroupStyle(GroupStyle);
+            IntellisensePopup.ItemSelectedAction = InsertItem;
 
             RichTextBox.MouseDoubleClick += (s, e) => ShowDetails();
             RichTextBox.PreviewMouseDown += (s, e) => CloseDetails();
 
             RichTextBox.KeyUp += (s, e) =>
             {
-                EvaluateShowPopup();
+                EvaluateShowPopup(e);
                 OnTextBoxKeyUp(e);
             };
             OnSegmentsChanged();
+        }
+
+        public override void OnApplyTemplate()
+        {
+            var window = Window.GetWindow(this);
+            window.Deactivated += (s, e) => OnDeactivated();
+            base.OnApplyTemplate();
+        }
+
+        private void OnDeactivated()
+        {
+            IntellisensePopup.IsOpen = false;
+            CloseDetails();
         }
 
         private void CloseDetails()
