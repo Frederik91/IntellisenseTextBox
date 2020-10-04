@@ -25,9 +25,9 @@ namespace SmartTestBox.Demo
     {
         private readonly List<ItemViewModel> _suggestionsSource = new List<ItemViewModel>
         {
-            new ItemViewModel("Apple"),
-            new ItemViewModel("Banana"),
-            new ItemViewModel("Cake")
+            new ItemViewModel("Apple", "Fruit"),
+            new ItemViewModel("Banana", "Fruit"),
+            new ItemViewModel("Cake", "Desert")
         };
 
         private ICollectionView Suggestions { get; }
@@ -36,8 +36,9 @@ namespace SmartTestBox.Demo
         {
             InitializeComponent();
             Suggestions = new ListCollectionView(_suggestionsSource) { Filter = o => Filter((ItemViewModel)o) };
+            Suggestions.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
             IntellisenseTextBox.ItemsSource = Suggestions;
-            IntellisenseTextBox.Segments = new List<SegmentBase> { new TextSegment { Text = "This " }, new ObjectSegment { Content = new ItemViewModel("is"), }, new TextSegment { Text = " a " }, new ObjectSegment { Content = new ItemViewModel("test") } };
+            IntellisenseTextBox.Segments = new List<SegmentBase> { new TextSegment { Text = "This " }, new ObjectSegment { Content = _suggestionsSource[0], }, new TextSegment { Text = " a " }, new ObjectSegment { Content = _suggestionsSource[1] }, new TextSegment { Text = " with" }, new ObjectSegment { Content = _suggestionsSource[2] } };
             IntellisenseTextBox.SearchChanged += (s, e) => Search();
             IntellisenseTextBox.SegmentsChanged += (s, e) => SegmentsChanged(e);
         }

@@ -9,6 +9,22 @@
         Title="MainWindow" Height="450" Width="800">
     <StackPanel Orientation="Vertical">
         <controls:IntellisenseTextBox x:Name="IntellisenseTextBox">
+            <controls:IntellisenseTextBox.DetailItemTemplate>
+                <DataTemplate DataType="demo:ItemViewModel">
+                    <Grid Background="White">
+                        <TextBlock Text="{Binding DisplayText}"></TextBlock>
+                    </Grid>
+                </DataTemplate>
+            </controls:IntellisenseTextBox.DetailItemTemplate>
+            <controls:IntellisenseTextBox.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock FontWeight="Bold" FontSize="14" Text="{Binding Name}"/>
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </controls:IntellisenseTextBox.GroupStyle>
             <controls:IntellisenseTextBox.ItemTemplate>
                 <DataTemplate DataType="demo:ItemViewModel">
                     <Border CornerRadius="2"

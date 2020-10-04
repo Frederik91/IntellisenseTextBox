@@ -1,37 +1,41 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:SmartTextBox.IntellisenseItemControl"
-                    xmlns:controls="clr-namespace:SmartTextBox.Controls">
+                    xmlns:controls="clr-namespace:SmartTextBox.Controls"
+                    xmlns:intellisenseItemDetailsControl="clr-namespace:SmartTextBox.IntellisenseItemDetailsControl">
     <Style TargetType="{x:Type local:IntellisenseItem}">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type local:IntellisenseItem}">
-                    <ContentControl Content="{Binding Content, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
-                        <ContentControl.Style>
-                            <Style TargetType="ContentControl">
-                                <Setter Property="ContentTemplate" Value="{Binding ItemTemplate, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:IntellisenseTextBox}}}"></Setter>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ItemTemplate, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:IntellisenseTextBox}}}" Value="{x:Null}">
-                                        <Setter Property="ContentTemplate">
-                                            <Setter.Value>
-                                                <DataTemplate>
-                                                    <Border CornerRadius="2"
+                    <Grid x:Name="PART_ItemGrid">
+                        <intellisenseItemDetailsControl:IntellisenseItemDetails x:Name="PART_ItemDetails"/>
+                        <ContentControl Content="{Binding Content, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"  x:Name="PART_ItemControl">
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl">
+                                    <Setter Property="ContentTemplate" Value="{Binding ItemTemplate, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:IntellisenseTextBox}}}"></Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ItemTemplate, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:IntellisenseTextBox}}}" Value="{x:Null}">
+                                            <Setter Property="ContentTemplate">
+                                                <Setter.Value>
+                                                    <DataTemplate>
+                                                        <Border CornerRadius="2"
                                                             Margin="0,1,0,-3"
                                                             Padding="2,0,2,0"
                                                             Background="Transparent"
                                                             BorderBrush="Orange"
                                                             VerticalAlignment="Center"
                                                             BorderThickness="1">
-                                                        <TextBlock Text="{Binding }"></TextBlock>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ContentControl.Style>
-                    </ContentControl>
+                                                            <TextBlock Text="{Binding }"></TextBlock>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ContentControl.Style>
+                        </ContentControl>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

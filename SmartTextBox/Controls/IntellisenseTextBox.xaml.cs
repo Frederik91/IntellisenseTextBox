@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -37,6 +39,29 @@ namespace SmartTextBox.Controls
             set { SetValue(ListItemTemplateProperty, value); }
         }
 
+        public static readonly DependencyProperty DetailItemTemplateProperty = DependencyProperty.Register(
+            "DetailItemTemplate", typeof(DataTemplate), typeof(IntellisenseTextBox), new PropertyMetadata(default(DataTemplate), null, CoerceValueCallback));
+
+        public DataTemplate DetailItemTemplate
+        {
+            get { return (DataTemplate)GetValue(DetailItemTemplateProperty); }
+            set { SetValue(DetailItemTemplateProperty, value); }
+        }
+
+        public static readonly DependencyProperty GroupStyleProperty = DependencyProperty.Register(
+            "GroupStyle", typeof(ObservableCollection<GroupStyle>), typeof(IntellisenseTextBox), new PropertyMetadata(new ObservableCollection<GroupStyle>()));
+
+        public ObservableCollection<GroupStyle> GroupStyle => (ObservableCollection<GroupStyle>)GetValue(GroupStyleProperty);
+
+        public static readonly DependencyProperty EnableDetailsProperty = DependencyProperty.Register(
+            "EnableDetails", typeof(bool), typeof(IntellisenseTextBox), new PropertyMetadata(true));
+
+        public bool EnableDetails
+        {
+            get { return (bool)GetValue(EnableDetailsProperty); }
+            set { SetValue(EnableDetailsProperty, value); }
+        }
+
         public static readonly DependencyProperty ItemsSourceProperty = DependencyProperty.Register("ItemsSource", typeof(IEnumerable), typeof(IntellisenseTextBox), new PropertyMetadata(default(IEnumerable)));
 
         public IEnumerable ItemsSource
@@ -46,9 +71,9 @@ namespace SmartTextBox.Controls
         }
 
         public static readonly DependencyProperty SearchTextProperty = DependencyProperty.Register(
-            "SearchText", typeof(string), typeof(IntellisenseTextBox), new PropertyMetadata(default(string), PropertyChangedCallback));
+            "SearchText", typeof(string), typeof(IntellisenseTextBox), new PropertyMetadata(default(string), SearchTextPropertyChangedCallback));
 
-        private static void PropertyChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void SearchTextPropertyChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (!(d is IntellisenseTextBox intellisenseTextBox))
                 return;
@@ -61,7 +86,7 @@ namespace SmartTextBox.Controls
 
         public string IntellisenseTrigger
         {
-            get { return (string) GetValue(IntellisenseTriggerProperty); }
+            get { return (string)GetValue(IntellisenseTriggerProperty); }
             set { SetValue(IntellisenseTriggerProperty, value); }
         }
 
@@ -154,6 +179,9 @@ namespace SmartTextBox.Controls
         {
             var paragraph = GetParagraph();
             var segments = new List<SegmentBase>();
+            if (paragraph?.Inlines is null)
+                return segments;
+
             foreach (var inline in paragraph.Inlines)
             {
                 if (inline is Run run)
@@ -173,12 +201,7 @@ namespace SmartTextBox.Controls
 
         private void EvaluateShowPopup()
         {
-            var characterAtCarrot = RichTextBox.CaretPosition.GetPointerContext(LogicalDirection.Backward);
-            if (characterAtCarrot != TextPointerContext.Text)
-                return;
-
             var start = RichTextBox.CaretPosition;
-
             var stringBeforeCaret = start.GetTextInRun(LogicalDirection.Backward);
 
             if (!stringBeforeCaret.Contains(IntellisenseTrigger))
@@ -240,7 +263,6 @@ namespace SmartTextBox.Controls
             {
                 _disableSegmentRegen = false;
             }
-
         }
 
         private void InsertItem(object suggestion)
@@ -252,9 +274,9 @@ namespace SmartTextBox.Controls
             var stringBeforeCaret = start.GetTextInRun(LogicalDirection.Backward);
             var textAfterCaret = start.GetTextInRun(LogicalDirection.Forward);
 
-
-            if (run.Text.EndsWith(IntellisenseTrigger))
-                run.Text = run.Text.Remove(stringBeforeCaret.Length - 1, 1) + textAfterCaret;
+            var searchText = GetSearchText(stringBeforeCaret);
+            if (run.Text.EndsWith(IntellisenseTrigger + searchText))
+                run.Text = run.Text.Remove(stringBeforeCaret.Length - (1 + searchText.Length), 1 + searchText.Length) + textAfterCaret;
             var newItem = new InlineUIContainer(new IntellisenseItem { Content = suggestion });
             start.Paragraph.Inlines.InsertAfter(run, newItem);
             IntellisensePopup.Close();
@@ -272,8 +294,13 @@ namespace SmartTextBox.Controls
 
         public IntellisenseTextBox()
         {
+            GroupStyle.CollectionChanged += GroupStyleChanged;
             InitializeComponent();
             IntellisensePopup.PopupPlacementTarget = this;
+            IntellisensePopup.UpdateGroupStyle(GroupStyle);
+
+            RichTextBox.MouseDoubleClick += (s, e) => ShowDetails();
+            RichTextBox.PreviewMouseDown += (s, e) => CloseDetails();
 
             RichTextBox.KeyUp += (s, e) =>
             {
@@ -281,6 +308,37 @@ namespace SmartTextBox.Controls
                 OnTextBoxKeyUp(e);
             };
             OnSegmentsChanged();
+        }
+
+        private void CloseDetails()
+        {
+            if (!(GetSelectedItem() is { } item))
+                return;
+
+            item.CloseDetails();
+        }
+
+        private void ShowDetails()
+        {
+            if (!(GetSelectedItem() is { } item))
+                return;
+
+            var rect = RichTextBox.CaretPosition.GetCharacterRect(LogicalDirection.Backward);
+            item.ShowDetails(rect);
+        }
+
+        private IntellisenseItem GetSelectedItem()
+        {
+            if (!(RichTextBox.Selection?.Start?.Parent is Run run && run.NextInline is InlineUIContainer container &&
+                  container.Child is IntellisenseItem item))
+                return null;
+
+            return item;
+        }
+
+        private void GroupStyleChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            IntellisensePopup.UpdateGroupStyle(GroupStyle);
         }
     }
 }

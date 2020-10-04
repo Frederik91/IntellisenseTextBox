@@ -4,5 +4,6 @@
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/SmartTextBox;component/IntellisenseItemControl/IntellisenseItemStyle.xaml"/>
         <ResourceDictionary Source="pack://application:,,,/SmartTextBox;component/IntellisensePopupControl/IntellisensePopupStyle.xaml"/>
+        <ResourceDictionary Source="pack://application:,,,/SmartTextBox;component/IntellisenseItemDetailsControl/IntellisenseItemDetailsStyle.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

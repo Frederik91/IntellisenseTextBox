@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using SmartTextBox.Controls;
 using SmartTextBox.Models;
 
 namespace SmartTextBox.IntellisensePopupControl
@@ -41,6 +43,7 @@ namespace SmartTextBox.IntellisensePopupControl
 
         private ListView _itemsListView;
         private Popup _popup;
+        private IEnumerable<GroupStyle> _groupStyles;
 
         public Func<string, List<object>> SearchFunction { get; set; }
 
@@ -58,10 +61,14 @@ namespace SmartTextBox.IntellisensePopupControl
         {
             if (IsOpen && _itemsListView != null)
             {
-                if (e.Key == Key.Down && _itemsListView.SelectedIndex < _itemsListView.ItemsSource.OfType<object>().Count() - 1)
+                var count = _itemsListView.ItemsSource.OfType<object>().Count();
+                if (e.Key == Key.Down && _itemsListView.SelectedIndex < count - 1)
                     _itemsListView.SelectedIndex++;
                 else if (e.Key == Key.Up && _itemsListView.SelectedIndex > 0)
                     _itemsListView.SelectedIndex--;
+
+                if (count == 0)
+                    IsOpen = false;
             }
 
 
@@ -71,6 +78,7 @@ namespace SmartTextBox.IntellisensePopupControl
         public override void OnApplyTemplate()
         {
             _itemsListView = Template.FindName("PART_ItemsListView", this) as ListView;
+            UpdateGroupStyle(_groupStyles);
             _popup = Template.FindName("PART_Popup", this) as Popup;
             SubscribeToMoveWithWindow();
             base.OnApplyTemplate();
@@ -116,6 +124,19 @@ namespace SmartTextBox.IntellisensePopupControl
         public object GetSelectedItem()
         {
             return _itemsListView.SelectedItem;
+        }
+
+        public void UpdateGroupStyle(IEnumerable<GroupStyle> groupStyle)
+        {
+            if (_itemsListView is null)
+            {
+                _groupStyles = groupStyle;
+                return;
+            }
+
+            _itemsListView.GroupStyle.Clear();
+            foreach (var style in groupStyle)
+                _itemsListView.GroupStyle.Add(style);
         }
     }
 }

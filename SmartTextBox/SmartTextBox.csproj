@@ -10,4 +10,10 @@
     <PackageReference Include="MvvmLightLibs" Version="5.4.1.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Page Update="IntellisenseItemDetailsControl\IntellisenseItemDetailsStyle.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+
 </Project>
