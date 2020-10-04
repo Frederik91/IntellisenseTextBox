@@ -76,7 +76,7 @@ jobs:
       run: dotnet pack $env:Wap_Project_Path /p:Configuration=$env:Configuration -o ${{ env.Wap_Project_Directory }}\AppPackages
 
     - name: Push generated package to GitHub registry
-      run: dotnet nuget push ${{ env.Wap_Project_Directory }}\AppPackages\*.nupkg --skip-duplicate --no-symbols true
+      run: dotnet nuget push ${{ env.Wap_Project_Directory }}\AppPackages\*.nupkg --skip-duplicate --no-symbols true --api-key ${{secrets.NUGETORGTOKEN}} --source https://api.nuget.org/v3/index.json
 
     # Upload the MSIX package: https://github.com/marketplace/actions/upload-artifact
     - name: Upload build artifacts
