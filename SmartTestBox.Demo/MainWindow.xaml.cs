@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using SmartTestBox.Demo.Models;
+using SmartTextBox.EventArgs;
 using SmartTextBox.Models;
 
 namespace SmartTestBox.Demo
@@ -22,23 +23,41 @@ namespace SmartTestBox.Demo
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly List<Suggestion> _suggestions = new List<Suggestion>
+        private readonly List<ItemViewModel> _suggestionsSource = new List<ItemViewModel>
         {
-            new Suggestion {DisplayText = "Apple", Content = new ItemViewModel("Apple") },
-            new Suggestion {DisplayText = "Banana", Content = new ItemViewModel("Banana")},
-            new Suggestion {DisplayText = "Cake", Content = new ItemViewModel("Cake")}
+            new ItemViewModel("Apple"),
+            new ItemViewModel("Banana"),
+            new ItemViewModel("Cake")
         };
+
+        private ICollectionView Suggestions { get; }
 
         public MainWindow()
         {
             InitializeComponent();
-            IntellisenseTextBox.Segments = new List<SegmentBase> { new TextSegment { Text = "This " }, new ObjectSegment { Content = new ItemViewModel("is"), }, new TextSegment { Text = " a " }, new ObjectSegment { Content = new ItemViewModel("test"), } };
-            IntellisenseTextBox.SearchFunction = Search;
+            Suggestions = new ListCollectionView(_suggestionsSource) { Filter = o => Filter((ItemViewModel)o) };
+            IntellisenseTextBox.ItemsSource = Suggestions;
+            IntellisenseTextBox.Segments = new List<SegmentBase> { new TextSegment { Text = "This " }, new ObjectSegment { Content = new ItemViewModel("is"), }, new TextSegment { Text = " a " }, new ObjectSegment { Content = new ItemViewModel("test") } };
+            IntellisenseTextBox.SearchChanged += (s, e) => Search();
+            IntellisenseTextBox.SegmentsChanged += (s, e) => SegmentsChanged(e);
         }
 
-        private List<object> Search(string input)
+        private void SegmentsChanged(SegmentsChangedEventArgs args)
         {
-            return _suggestions.Where(x => x.DisplayText.Contains(input, StringComparison.CurrentCultureIgnoreCase)).OfType<object>().ToList();
+            SegmentCountTextBlock.Text = $"Segment count: {args.Segments.Count}";
+        }
+
+        private bool Filter(ItemViewModel item)
+        {
+            if (string.IsNullOrEmpty(IntellisenseTextBox.SearchText))
+                return true;
+
+            return item?.DisplayText?.Contains(IntellisenseTextBox.SearchText, StringComparison.InvariantCultureIgnoreCase) ?? false;
+        }
+
+        private void Search()
+        {
+            Suggestions.Refresh();
         }
     }
 }

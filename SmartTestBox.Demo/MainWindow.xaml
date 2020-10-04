@@ -7,8 +7,8 @@
         xmlns:demo="clr-namespace:SmartTestBox.Demo"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <controls:IntellisenseTextBox x:Name="IntellisenseTextBox" SearchFunction="Search">
+    <StackPanel Orientation="Vertical">
+        <controls:IntellisenseTextBox x:Name="IntellisenseTextBox">
             <controls:IntellisenseTextBox.ItemTemplate>
                 <DataTemplate DataType="demo:ItemViewModel">
                     <Border CornerRadius="2"
@@ -23,10 +23,11 @@
                 </DataTemplate>
             </controls:IntellisenseTextBox.ItemTemplate>
             <controls:IntellisenseTextBox.ListItemTemplate>
-                <DataTemplate>
+                <DataTemplate DataType="demo:ItemViewModel">
                     <TextBlock Text="{Binding DisplayText}"></TextBlock>
                 </DataTemplate>
             </controls:IntellisenseTextBox.ListItemTemplate>
         </controls:IntellisenseTextBox>
-    </Grid>
+        <TextBlock x:Name="SegmentCountTextBlock"></TextBlock>
+    </StackPanel>
 </Window>

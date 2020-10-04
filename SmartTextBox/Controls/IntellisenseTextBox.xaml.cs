@@ -1,31 +1,26 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using SmartTextBox.EventArgs;
 using SmartTextBox.IntellisenseItemControl;
 using SmartTextBox.Models;
 
 namespace SmartTextBox.Controls
 {
-    /// <summary>
-    /// Interaction logic for IntellisenseTextBoxControl.xaml
-    /// </summary>
-    public partial class IntellisenseTextBox : UserControl
+    public delegate void SearchChangedEventHandler(object sender, SearchChangedEventArgs args);
+    public delegate void SegmentsChangedEventHandler(object sender, SegmentsChangedEventArgs args);
+
+    public partial class IntellisenseTextBox
     {
-        public static readonly DependencyProperty SearchFunctionProperty = DependencyProperty.Register(
-    "SearchFunction", typeof(Func<string, List<object>>), typeof(IntellisenseTextBox), new PropertyMetadata(default(Func<string, List<object>>)));
+        private static readonly RoutedEvent SearchChangedEvent = EventManager.RegisterRoutedEvent("SearchChanged", RoutingStrategy.Direct, typeof(SearchChangedEventHandler), typeof(IntellisenseTextBox));
+        private static readonly RoutedEvent SegmentChangedEvent = EventManager.RegisterRoutedEvent("SegmentsChanged", RoutingStrategy.Direct, typeof(SegmentsChangedEventHandler), typeof(IntellisenseTextBox));
 
-        public Func<string, List<object>> SearchFunction
-        {
-            get { return (Func<string, List<object>>)GetValue(SearchFunctionProperty); }
-            set { SetValue(SearchFunctionProperty, value); if (IntellisensePopup != null) IntellisensePopup.SearchFunction = SearchFunction; }
-        }
-
-        public static readonly DependencyProperty SegmentsProperty = DependencyProperty.Register(
-            "Segments", typeof(List<SegmentBase>), typeof(IntellisenseTextBox), new PropertyMetadata(default(List<SegmentBase>), OnSegmentsChanged));
+        public static readonly DependencyProperty SegmentsProperty = DependencyProperty.Register("Segments", typeof(List<SegmentBase>), typeof(IntellisenseTextBox), new PropertyMetadata(default(List<SegmentBase>), OnSegmentsChanged));
 
         public List<SegmentBase> Segments
         {
@@ -33,19 +28,77 @@ namespace SmartTextBox.Controls
             set { SetValue(SegmentsProperty, value); }
         }
 
-
         public static readonly DependencyProperty ListItemTemplateProperty = DependencyProperty.Register(
             "ListItemTemplate", typeof(DataTemplate), typeof(IntellisenseTextBox), new PropertyMetadata(default(DataTemplate), null, CoerceValueCallback));
 
         public DataTemplate ListItemTemplate
         {
-            get { return (DataTemplate) GetValue(ListItemTemplateProperty); }
+            get { return (DataTemplate)GetValue(ListItemTemplateProperty); }
             set { SetValue(ListItemTemplateProperty, value); }
         }
 
+        public static readonly DependencyProperty ItemsSourceProperty = DependencyProperty.Register("ItemsSource", typeof(IEnumerable), typeof(IntellisenseTextBox), new PropertyMetadata(default(IEnumerable)));
+
+        public IEnumerable ItemsSource
+        {
+            get { return (IEnumerable)GetValue(ItemsSourceProperty); }
+            set { SetValue(ItemsSourceProperty, value); }
+        }
+
+        public static readonly DependencyProperty SearchTextProperty = DependencyProperty.Register(
+            "SearchText", typeof(string), typeof(IntellisenseTextBox), new PropertyMetadata(default(string), PropertyChangedCallback));
+
+        private static void PropertyChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (!(d is IntellisenseTextBox intellisenseTextBox))
+                return;
+
+            intellisenseTextBox.RaiseSearchChangedEvent(e.NewValue?.ToString());
+        }
+
+        public static readonly DependencyProperty IntellisenseTriggerProperty = DependencyProperty.Register(
+            "IntellisenseTrigger", typeof(string), typeof(IntellisenseTextBox), new PropertyMetadata("@"));
+
+        public string IntellisenseTrigger
+        {
+            get { return (string) GetValue(IntellisenseTriggerProperty); }
+            set { SetValue(IntellisenseTriggerProperty, value); }
+        }
+
+
+        private void RaiseSearchChangedEvent(string searchText)
+        {
+            RaiseEvent(new SearchChangedEventArgs(SearchChangedEvent, this) { SearchText = searchText });
+        }
+
+        private void RaiseSegmentsChangedEvent()
+        {
+            var segments = GetSegments();
+            RaiseEvent(new SegmentsChangedEventArgs(SegmentChangedEvent, this) { Segments = segments });
+        }
+
+        public event SearchChangedEventHandler SearchChanged
+        {
+            add => AddHandler(SearchChangedEvent, value);
+            remove => RemoveHandler(SearchChangedEvent, value);
+        }
+
+        public event SegmentsChangedEventHandler SegmentsChanged
+        {
+            add => AddHandler(SegmentChangedEvent, value);
+            remove => RemoveHandler(SegmentChangedEvent, value);
+        }
+
+        public string SearchText
+        {
+            get { return (string)GetValue(SearchTextProperty); }
+            set { SetValue(SearchTextProperty, value); }
+        }
 
         public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.Register(
             "ItemTemplate", typeof(DataTemplate), typeof(IntellisenseTextBox), new PropertyMetadata(null, null, CoerceValueCallback));
+
+        private bool _disableSegmentRegen;
 
         private static object CoerceValueCallback(DependencyObject d, object baseValue)
         {
@@ -73,21 +126,43 @@ namespace SmartTextBox.Controls
             if (RichTextBox is null)
                 return;
 
-            var paragraph = GetParagraph();
-            paragraph.Inlines.Clear();
-
-            foreach (var segment in Segments ?? new List<SegmentBase>())
+            if (!_disableSegmentRegen)
             {
-                switch (segment)
+                var paragraph = GetParagraph();
+                paragraph.Inlines.Clear();
+
+                foreach (var segment in Segments ?? new List<SegmentBase>())
                 {
-                    case TextSegment textSegment:
-                        paragraph.Inlines.Add(textSegment.Text);
-                        break;
-                    case ObjectSegment objectSegment:
-                        paragraph.Inlines.Add(new IntellisenseItem { Content = objectSegment.Content });
-                        break;
+                    switch (segment)
+                    {
+                        case TextSegment textSegment:
+                            paragraph.Inlines.Add(textSegment.Text);
+                            break;
+                        case ObjectSegment objectSegment:
+                            paragraph.Inlines.Add(new IntellisenseItem { Content = objectSegment.Content });
+                            break;
+                    }
                 }
+
+                RichTextBox.CaretPosition = paragraph.ElementEnd;
             }
+
+            RaiseSegmentsChangedEvent();
+        }
+
+        private List<SegmentBase> GetSegments()
+        {
+            var paragraph = GetParagraph();
+            var segments = new List<SegmentBase>();
+            foreach (var inline in paragraph.Inlines)
+            {
+                if (inline is Run run)
+                    segments.Add(new TextSegment { Text = run.Text });
+                else if (inline is InlineUIContainer container && container.Child is IntellisenseItem item)
+                    segments.Add(new ObjectSegment { Content = item.Content });
+            }
+
+            return segments;
         }
 
         private Paragraph GetParagraph()
@@ -96,7 +171,7 @@ namespace SmartTextBox.Controls
         }
 
 
-        private void FormatSuggestions()
+        private void EvaluateShowPopup()
         {
             var characterAtCarrot = RichTextBox.CaretPosition.GetPointerContext(LogicalDirection.Backward);
             if (characterAtCarrot != TextPointerContext.Text)
@@ -106,14 +181,15 @@ namespace SmartTextBox.Controls
 
             var stringBeforeCaret = start.GetTextInRun(LogicalDirection.Backward);
 
-            if (!stringBeforeCaret.Contains("@"))
+            if (!stringBeforeCaret.Contains(IntellisenseTrigger))
             {
                 IntellisensePopup.Close();
                 return;
             }
 
             var searchText = GetSearchText(stringBeforeCaret);
-            IntellisensePopup.Search(searchText);
+            if (SearchText != searchText)
+                SearchText = searchText;
 
             var rect = RichTextBox.CaretPosition.GetCharacterRect(LogicalDirection.Backward);
             IntellisensePopup.Show(rect);
@@ -123,16 +199,46 @@ namespace SmartTextBox.Controls
         {
             if (IntellisensePopup?.IsOpen != true)
             {
+                EvaluateSegmentsChanged();
                 base.OnKeyDown(e);
                 return;
             }
 
-
             IntellisensePopup.UpdateKeyDown(e);
 
             if (e.Key == Key.Enter)
-            {
                 InsertItem(IntellisensePopup.GetSelectedItem());
+
+
+            EvaluateSegmentsChanged();
+        }
+
+        private void EvaluateSegmentsChanged()
+        {
+            var segments = GetSegments();
+            try
+            {
+                _disableSegmentRegen = true;
+                if (segments.Count != Segments.Count)
+                {
+                    Segments = segments;
+                    return;
+                }
+
+                for (var i = 0; i < segments.Count - 1; i++)
+                {
+                    var segment = segments[i];
+                    var otherSegment = Segments[i];
+                    if (segment.Equals(otherSegment))
+                        continue;
+
+                    Segments = segments;
+                    return;
+                }
+            }
+            finally
+            {
+                _disableSegmentRegen = false;
             }
 
         }
@@ -147,20 +253,21 @@ namespace SmartTextBox.Controls
             var textAfterCaret = start.GetTextInRun(LogicalDirection.Forward);
 
 
-            if (run.Text.EndsWith("@"))
+            if (run.Text.EndsWith(IntellisenseTrigger))
                 run.Text = run.Text.Remove(stringBeforeCaret.Length - 1, 1) + textAfterCaret;
             var newItem = new InlineUIContainer(new IntellisenseItem { Content = suggestion });
             start.Paragraph.Inlines.InsertAfter(run, newItem);
             IntellisensePopup.Close();
             RichTextBox.CaretPosition = newItem.ContentEnd;
+            RaiseSegmentsChangedEvent();
         }
 
         private string GetSearchText(string stringBeforeCaret)
         {
-            if (stringBeforeCaret.EndsWith("@"))
+            if (stringBeforeCaret.EndsWith(IntellisenseTrigger))
                 return string.Empty;
 
-            return stringBeforeCaret.Remove(0, stringBeforeCaret.IndexOf("@", StringComparison.InvariantCulture) + 3).TrimStart();
+            return stringBeforeCaret.Remove(0, stringBeforeCaret.IndexOf(IntellisenseTrigger, StringComparison.InvariantCulture) + 1).TrimStart();
         }
 
         public IntellisenseTextBox()
@@ -170,10 +277,9 @@ namespace SmartTextBox.Controls
 
             RichTextBox.KeyUp += (s, e) =>
             {
-                FormatSuggestions();
+                EvaluateShowPopup();
                 OnTextBoxKeyUp(e);
             };
-            IntellisensePopup.SearchFunction = SearchFunction;
             OnSegmentsChanged();
         }
     }

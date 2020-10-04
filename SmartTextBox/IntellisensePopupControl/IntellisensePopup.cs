@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -38,17 +39,8 @@ namespace SmartTextBox.IntellisensePopupControl
             set { SetValue(IsOpenProperty, value); }
         }
 
-        public static readonly DependencyProperty ItemsProperty = DependencyProperty.Register(
-            "Items", typeof(List<object>), typeof(IntellisensePopup), new PropertyMetadata(default(List<object>)));
-
         private ListView _itemsListView;
         private Popup _popup;
-
-        public List<object> Items
-        {
-            get { return (List<object>)GetValue(ItemsProperty); }
-            set { SetValue(ItemsProperty, value); }
-        }
 
         public Func<string, List<object>> SearchFunction { get; set; }
 
@@ -66,9 +58,9 @@ namespace SmartTextBox.IntellisensePopupControl
         {
             if (IsOpen && _itemsListView != null)
             {
-                if (e.Key == Key.Down)
+                if (e.Key == Key.Down && _itemsListView.SelectedIndex < _itemsListView.ItemsSource.OfType<object>().Count() - 1)
                     _itemsListView.SelectedIndex++;
-                else if (e.Key == Key.Up)
+                else if (e.Key == Key.Up && _itemsListView.SelectedIndex > 0)
                     _itemsListView.SelectedIndex--;
             }
 
@@ -114,17 +106,11 @@ namespace SmartTextBox.IntellisensePopupControl
         {
             PopupPlacementRectangle = rect;
             IsOpen = true;
-            Items = SearchFunction?.Invoke(string.Empty);
         }
 
         public void Close()
         {
             IsOpen = false;
-        }
-
-        public void Search(string searchText)
-        {
-            Items = SearchFunction?.Invoke(searchText);
         }
 
         public object GetSelectedItem()
