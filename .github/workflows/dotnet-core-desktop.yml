@@ -94,6 +94,9 @@ jobs:
         Appx_Bundle_Platforms: x86|x64
         Appx_Package_Build_Mode: StoreUpload
         Configuration: ${{ matrix.configuration }}
+    
+    - name: Create nuget package
+      run: dotnet pack $env:Wap_Project_Path /p:Configuration=$env:Configuration -o ${{ env.Wap_Project_Directory }}\AppPackages
 
     # Upload the MSIX package: https://github.com/marketplace/actions/upload-artifact
     - name: Upload build artifacts
