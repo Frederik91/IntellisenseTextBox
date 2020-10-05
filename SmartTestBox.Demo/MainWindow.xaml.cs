@@ -41,6 +41,24 @@ namespace SmartTestBox.Demo
             IntellisenseTextBox.Segments = new List<SegmentBase> { new TextSegment { Text = "This " }, new ObjectSegment { Content = _suggestionsSource[0], }, new TextSegment { Text = " a " }, new ObjectSegment { Content = _suggestionsSource[1] }, new TextSegment { Text = " with" }, new ObjectSegment { Content = _suggestionsSource[2] } };
             IntellisenseTextBox.SearchChanged += (s, e) => Search();
             IntellisenseTextBox.SegmentsChanged += (s, e) => SegmentsChanged(e);
+            IntellisenseTextBox.SegmentsCopied += (s, e) => SegmentsCopied(e.CopiedSegments);
+            IntellisenseTextBox.SegmentsPasted += (s, e) => SegmentsPasted(e.PastedSegments);
+            IntellisenseTextBox.SegmentsCut += (s, e) => SegmentsCut(e.CutSegments);
+        }
+
+        private void SegmentsCut(List<SegmentBase> argsCutSegments)
+        {
+            
+        }
+
+        private void SegmentsPasted(List<SegmentBase> argsPastedSegments)
+        {
+            
+        }
+
+        private void SegmentsCopied(List<SegmentBase> argsCopiedSegments)
+        {
+            
         }
 
         private void SegmentsChanged(SegmentsChangedEventArgs args)

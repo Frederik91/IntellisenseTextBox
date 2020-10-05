@@ -17,16 +17,23 @@ using SmartTextBox.Models;
 using Clipboard = System.Windows.Clipboard;
 using DataObject = System.Windows.DataObject;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using SelectionMode = System.Windows.Controls.SelectionMode;
 
 namespace SmartTextBox.Controls
 {
     public delegate void SearchChangedEventHandler(object sender, SearchChangedEventArgs args);
     public delegate void SegmentsChangedEventHandler(object sender, SegmentsChangedEventArgs args);
+    public delegate void SegmentsCopiedEventHandler(object sender, SegmentsCopiedEventArgs args);
+    public delegate void SegmentsPastedEventHandler(object sender, SegmentsPastedEventArgs args);
+    public delegate void SegmentsCutEventHandler(object sender, SegmentsCutEventArgs args);
 
     public partial class IntellisenseTextBox
     {
         private static readonly RoutedEvent SearchChangedEvent = EventManager.RegisterRoutedEvent("SearchChanged", RoutingStrategy.Direct, typeof(SearchChangedEventHandler), typeof(IntellisenseTextBox));
         private static readonly RoutedEvent SegmentChangedEvent = EventManager.RegisterRoutedEvent("SegmentsChanged", RoutingStrategy.Direct, typeof(SegmentsChangedEventHandler), typeof(IntellisenseTextBox));
+        private static readonly RoutedEvent SegmentsCopiedEvent = EventManager.RegisterRoutedEvent("SegmentsCopied", RoutingStrategy.Direct, typeof(SegmentsCopiedEventHandler), typeof(IntellisenseTextBox));
+        private static readonly RoutedEvent SegmentsPastedEvent = EventManager.RegisterRoutedEvent("SegmentsPasted", RoutingStrategy.Direct, typeof(SegmentsPastedEventHandler), typeof(IntellisenseTextBox));
+        private static readonly RoutedEvent SegmentsCutEvent = EventManager.RegisterRoutedEvent("SegmentsCut", RoutingStrategy.Direct, typeof(SegmentsCutEventHandler), typeof(IntellisenseTextBox));
 
         public static readonly DependencyProperty SegmentsProperty = DependencyProperty.Register("Segments", typeof(List<SegmentBase>), typeof(IntellisenseTextBox), new PropertyMetadata(default(List<SegmentBase>), OnSegmentsChanged));
 
@@ -108,6 +115,21 @@ namespace SmartTextBox.Controls
             RaiseEvent(new SegmentsChangedEventArgs(SegmentChangedEvent, this) { Segments = segments });
         }
 
+        private void RaiseSegmentsCopiedEvent(List<SegmentBase> segments)
+        {
+            RaiseEvent(new SegmentsCopiedEventArgs(SegmentsCopiedEvent, this) { CopiedSegments = segments });
+        }
+
+        private void RaiseSegmentsPastedEvent(List<SegmentBase> segments)
+        {
+            RaiseEvent(new SegmentsPastedEventArgs(SegmentsPastedEvent, this) { PastedSegments = segments });
+        }
+
+        private void RaiseSegmentsCutEvent(List<SegmentBase> segments)
+        {
+            RaiseEvent(new SegmentsCutEventArgs(SegmentsCutEvent, this) { CutSegments = segments });
+        }
+
         public event SearchChangedEventHandler SearchChanged
         {
             add => AddHandler(SearchChangedEvent, value);
@@ -118,6 +140,24 @@ namespace SmartTextBox.Controls
         {
             add => AddHandler(SegmentChangedEvent, value);
             remove => RemoveHandler(SegmentChangedEvent, value);
+        }
+
+        public event SegmentsCopiedEventHandler SegmentsCopied
+        {
+            add => AddHandler(SegmentsCopiedEvent, value);
+            remove => RemoveHandler(SegmentChangedEvent, value);
+        }
+
+        public event SegmentsPastedEventHandler SegmentsPasted
+        {
+            add => AddHandler(SegmentsPastedEvent, value);
+            remove => RemoveHandler(SegmentsPastedEvent, value);
+        }
+
+        public event SegmentsCutEventHandler SegmentsCut
+        {
+            add => AddHandler(SegmentsCutEvent, value);
+            remove => RemoveHandler(SegmentsCutEvent, value);
         }
 
         public string SearchText
@@ -246,11 +286,14 @@ namespace SmartTextBox.Controls
             EvaluateSegmentsChanged();
         }
 
-        private void Copy()
+        private List<SegmentBase> Copy()
         {
             var start = RichTextBox.Selection.Start;
             if (!(start.Parent is Inline currentInline))
-                return;
+                return null;
+
+            if (RichTextBox.Selection.Start.Parent is Run startRun && RichTextBox.Selection.End.Parent is Run endRun && startRun == endRun)
+                return null;
 
             var end = RichTextBox.Selection.End;
             var endInline = RichTextBox.Selection.End.Parent as Inline;
@@ -286,26 +329,19 @@ namespace SmartTextBox.Controls
                 currentInline = currentInline.NextInline;
             }
 
-            var json = JsonConvert.SerializeObject(segments, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-            Clipboard.SetText(json);
+            return segments;
         }
 
-        private void Paste()
+        private void Paste(List<SegmentBase> segments)
         {
-            if (!(RichTextBox?.Selection?.Start?.Paragraph?.Inlines is { } collection))
-                return;
-
-            RichTextBox.Selection.Text = string.Empty;
-
             try
             {
-                var text = Clipboard.GetText();
-                var segments = JsonConvert.DeserializeObject<List<SegmentBase>>(text, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-                if (segments is null)
+                if (!(RichTextBox?.Selection?.Start?.Paragraph?.Inlines is { } collection))
                     return;
 
                 Inline inline;
                 var cutText = string.Empty;
+                RichTextBox.Selection.Text = string.Empty;
                 if (RichTextBox.Selection.Start.Parent is Run run)
                 {
                     cutText = RichTextBox.Selection.Start.GetTextInRun(LogicalDirection.Forward);
@@ -343,6 +379,8 @@ namespace SmartTextBox.Controls
                     else
                         collection.InsertAfter(inline, new Run(cutText));
                 }
+
+                RaiseSegmentsPastedEvent(segments);
             }
             catch (Exception)
             {
@@ -422,8 +460,8 @@ namespace SmartTextBox.Controls
             IntellisensePopup.PopupPlacementTarget = this;
             IntellisensePopup.UpdateGroupStyle(GroupStyle);
             IntellisensePopup.ItemSelectedAction = InsertItem;
-            
-            
+
+
             CommandManager.AddPreviewExecutedHandler(RichTextBox, PreviewExecuted);
             DataObject.AddPastingHandler(RichTextBox, PastCommand);
             DataObject.AddCopyingHandler(RichTextBox, CopyCommand);
@@ -441,23 +479,52 @@ namespace SmartTextBox.Controls
 
         private void PreviewExecuted(object sender, ExecutedRoutedEventArgs e)
         {
-            if (e.Command == ApplicationCommands.Cut)
-            {
-                Copy();
-                RichTextBox.Selection.Text = string.Empty;
-                e.Handled = true;
-            }
+            if (e.Command != ApplicationCommands.Cut)
+                return;
+
+            var segments = Copy();
+            var json = JsonConvert.SerializeObject(segments, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+            Clipboard.SetText(json);
+            RichTextBox.Selection.Text = string.Empty;
+            e.Handled = true;
+            RaiseSegmentsCutEvent(segments);
         }
 
         private void PastCommand(object sender, DataObjectEventArgs e)
         {
-            Paste();
-            e.CancelCommand();
+
+
+            try
+            {
+                var text = Clipboard.GetText();
+                if (string.IsNullOrEmpty(text))
+                    return;
+
+                var segments = JsonConvert.DeserializeObject<List<SegmentBase>>(text, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+                if (segments is null)
+                    return;
+
+                Paste(segments);
+                e.CancelCommand();
+            }
+            catch
+            {
+                // ignored
+            }
+
+
+
         }
 
         private void CopyCommand(object sender, DataObjectEventArgs e)
         {
-            Copy();
+            var segments = Copy();
+            if (segments?.Any() != true || segments.All(x => x.GetType() == typeof(TextSegment)))
+                return;
+
+            var json = JsonConvert.SerializeObject(segments, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+            Clipboard.SetText(json);
+            RaiseSegmentsCopiedEvent(segments);
             e.CancelCommand();
         }
 
