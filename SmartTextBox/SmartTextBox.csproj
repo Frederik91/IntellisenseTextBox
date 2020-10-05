@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <LangVersion>8.0</LangVersion>
     <NoWarn>NU1701</NoWarn>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -12,11 +13,15 @@
     <PackageProjectUrl>https://github.com/Frederik91/IntellisenseTextBox</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Frederik91/IntellisenseTextBox</RepositoryUrl>
     <Authors>Frederik91</Authors>
-    <Version>1.0.2</Version>
+    <Version>1.1.0</Version>
     <Product>IntellisenseTextBox</Product>
     <Description>A text box control with intellisense behavior</Description>
     <PackageTags>TextBox;Intellisense</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+  </ItemGroup>
 
   <ItemGroup>
     <Page Update="IntellisenseItemDetailsControl\IntellisenseItemDetailsStyle.xaml">

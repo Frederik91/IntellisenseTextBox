@@ -8,10 +8,15 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
+using Newtonsoft.Json;
 using SmartTextBox.EventArgs;
 using SmartTextBox.IntellisenseItemControl;
 using SmartTextBox.Models;
+using Clipboard = System.Windows.Clipboard;
+using DataObject = System.Windows.DataObject;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace SmartTextBox.Controls
 {
@@ -209,7 +214,7 @@ namespace SmartTextBox.Controls
                 IntellisensePopup.Close();
                 return;
             }
-            
+
             var searchText = GetSearchText(stringBeforeCaret);
             if (SearchText != searchText)
                 SearchText = searchText;
@@ -238,8 +243,113 @@ namespace SmartTextBox.Controls
             if (e.Key == Key.Enter)
                 InsertItem(IntellisensePopup.GetSelectedItem());
 
-
             EvaluateSegmentsChanged();
+        }
+
+        private void Copy()
+        {
+            var start = RichTextBox.Selection.Start;
+            if (!(start.Parent is Inline currentInline))
+                return;
+
+            var end = RichTextBox.Selection.End;
+            var endInline = RichTextBox.Selection.End.Parent as Inline;
+            if (endInline is null && RichTextBox.Selection.End.Parent is Paragraph paragraph)
+                endInline = paragraph.Inlines.LastInline;
+            var startText = start.GetTextInRun(LogicalDirection.Forward);
+            var segments = new List<SegmentBase>();
+            if (!string.IsNullOrEmpty(startText))
+                segments.Add(new TextSegment(startText));
+            currentInline = currentInline.NextInline;
+            while (currentInline != null)
+            {
+                if (currentInline == endInline)
+                {
+                    if (currentInline is Run)
+                    {
+                        var endText = end.GetTextInRun(LogicalDirection.Backward);
+                        segments.Add(new TextSegment(endText));
+                    }
+                    else if (currentInline is InlineUIContainer container && container.Child is IntellisenseItem child)
+                        segments.Add(new ObjectSegment { Content = child.Content });
+
+                    break;
+                }
+
+
+                if (currentInline is Run run)
+                    segments.Add(new TextSegment(run.Text));
+                else if (currentInline is InlineUIContainer container && container.Child is IntellisenseItem child)
+                    segments.Add(new ObjectSegment { Content = child.Content });
+
+
+                currentInline = currentInline.NextInline;
+            }
+
+            var json = JsonConvert.SerializeObject(segments, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+            Clipboard.SetText(json);
+        }
+
+        private void Paste()
+        {
+            if (!(RichTextBox?.Selection?.Start?.Paragraph?.Inlines is { } collection))
+                return;
+
+            RichTextBox.Selection.Text = string.Empty;
+
+            try
+            {
+                var text = Clipboard.GetText();
+                var segments = JsonConvert.DeserializeObject<List<SegmentBase>>(text, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+                if (segments is null)
+                    return;
+
+                Inline inline;
+                var cutText = string.Empty;
+                if (RichTextBox.Selection.Start.Parent is Run run)
+                {
+                    cutText = RichTextBox.Selection.Start.GetTextInRun(LogicalDirection.Forward);
+                    run.Text = run.Text.Remove(run.Text.Length - cutText.Length, cutText.Length);
+                    inline = run;
+                }
+                else if (RichTextBox.Selection.Start.Parent is Paragraph paragraph)
+                    inline = paragraph.Inlines.LastInline;
+                else
+                    return;
+
+                foreach (var segment in segments)
+                {
+                    Inline newInline;
+                    switch (segment)
+                    {
+                        case TextSegment textSegment:
+                            newInline = new Run(textSegment.Text);
+                            break;
+                        case ObjectSegment objectSegment:
+                            newInline = new InlineUIContainer(new IntellisenseItem { Content = objectSegment.Content });
+                            break;
+                        default:
+                            continue;
+                    }
+
+                    collection.InsertAfter(inline, newInline);
+                    inline = newInline;
+                }
+
+                if (!string.IsNullOrEmpty(cutText))
+                {
+                    if (inline is Run lastRun)
+                        lastRun.Text += cutText;
+                    else
+                        collection.InsertAfter(inline, new Run(cutText));
+                }
+            }
+            catch (Exception)
+            {
+                // Ignored
+            }
+
+
         }
 
         private void EvaluateSegmentsChanged()
@@ -312,6 +422,11 @@ namespace SmartTextBox.Controls
             IntellisensePopup.PopupPlacementTarget = this;
             IntellisensePopup.UpdateGroupStyle(GroupStyle);
             IntellisensePopup.ItemSelectedAction = InsertItem;
+            
+            
+            CommandManager.AddPreviewExecutedHandler(RichTextBox, PreviewExecuted);
+            DataObject.AddPastingHandler(RichTextBox, PastCommand);
+            DataObject.AddCopyingHandler(RichTextBox, CopyCommand);
 
             RichTextBox.MouseDoubleClick += (s, e) => ShowDetails();
             RichTextBox.PreviewMouseDown += (s, e) => CloseDetails();
@@ -323,6 +438,30 @@ namespace SmartTextBox.Controls
             };
             OnSegmentsChanged();
         }
+
+        private void PreviewExecuted(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e.Command == ApplicationCommands.Cut)
+            {
+                Copy();
+                RichTextBox.Selection.Text = string.Empty;
+                e.Handled = true;
+            }
+        }
+
+        private void PastCommand(object sender, DataObjectEventArgs e)
+        {
+            Paste();
+            e.CancelCommand();
+        }
+
+        private void CopyCommand(object sender, DataObjectEventArgs e)
+        {
+            Copy();
+            e.CancelCommand();
+        }
+
+
 
         public override void OnApplyTemplate()
         {
@@ -339,7 +478,7 @@ namespace SmartTextBox.Controls
 
         private void CloseDetails()
         {
-            if (!(GetSelectedItem() is { } item))
+            if (!(GetFirstItemFromSelection() is { } item))
                 return;
 
             item.CloseDetails();
@@ -347,14 +486,14 @@ namespace SmartTextBox.Controls
 
         private void ShowDetails()
         {
-            if (!(GetSelectedItem() is { } item))
+            if (!(GetFirstItemFromSelection() is { } item))
                 return;
 
             var rect = RichTextBox.CaretPosition.GetCharacterRect(LogicalDirection.Backward);
             item.ShowDetails(rect);
         }
 
-        private IntellisenseItem GetSelectedItem()
+        private IntellisenseItem GetFirstItemFromSelection()
         {
             if (!(RichTextBox.Selection?.Start?.Parent is Run run && run.NextInline is InlineUIContainer container &&
                   container.Child is IntellisenseItem item))

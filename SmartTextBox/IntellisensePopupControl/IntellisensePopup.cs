@@ -78,14 +78,14 @@ namespace SmartTextBox.IntellisensePopupControl
         public override void OnApplyTemplate()
         {
             _itemsListView = Template.FindName("PART_ItemsListView", this) as ListView;
-            _itemsListView.MouseLeftButtonUp += (s, e) => SelectionChanged(e);
+            _itemsListView.MouseLeftButtonUp += (s, e) => SelectionChanged();
             UpdateGroupStyle(_groupStyles);
             Popup = Template.FindName("PART_Popup", this) as Popup;
             SubscribeToMoveWithWindow();
             base.OnApplyTemplate();
         }
 
-        private void SelectionChanged(object a)
+        private void SelectionChanged()
         {
             if (_itemsListView?.SelectedItem is null || ItemSelectedAction is null || _disableItemSelectedFlag)
                 return;
