@@ -13,14 +13,14 @@
     <PackageProjectUrl>https://github.com/Frederik91/IntellisenseTextBox</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Frederik91/IntellisenseTextBox</RepositoryUrl>
     <Authors>Frederik91</Authors>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
     <Product>IntellisenseTextBox</Product>
     <Description>A text box control with intellisense behavior</Description>
     <PackageTags>TextBox;Intellisense</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
   </ItemGroup>
 
   <ItemGroup>
