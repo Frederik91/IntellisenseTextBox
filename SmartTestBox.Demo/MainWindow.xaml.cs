@@ -53,7 +53,10 @@ namespace SmartTestBox.Demo
             if (string.IsNullOrEmpty(IntellisenseTextBox.SearchText))
                 return true;
 
-            return item?.DisplayText?.Contains(IntellisenseTextBox.SearchText, StringComparison.InvariantCultureIgnoreCase) ?? false;
+            if (item?.DisplayText?.Contains(IntellisenseTextBox.SearchText, StringComparison.InvariantCultureIgnoreCase) == true)
+                return true;
+            return item?.Group?.Contains(IntellisenseTextBox.SearchText, StringComparison.InvariantCultureIgnoreCase) ??
+                   false;
         }
 
         private void Search()

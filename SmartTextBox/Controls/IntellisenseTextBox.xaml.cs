@@ -226,7 +226,7 @@ namespace SmartTextBox.Controls
 
         private void OnTextBoxKeyUp(KeyEventArgs e)
         {
-            if (IntellisensePopup?.IsOpen != true)
+            if (IntellisensePopup?.Popup.IsOpen != true)
             {
                 EvaluateSegmentsChanged();
                 base.OnKeyDown(e);
@@ -254,7 +254,7 @@ namespace SmartTextBox.Controls
                     return;
                 }
 
-                for (var i = 0; i < segments.Count - 1; i++)
+                for (var i = 0; i < segments.Count; i++)
                 {
                     var segment = segments[i];
                     var otherSegment = Segments[i];
@@ -333,7 +333,7 @@ namespace SmartTextBox.Controls
 
         private void OnDeactivated()
         {
-            IntellisensePopup.IsOpen = false;
+            IntellisensePopup.Popup.IsOpen = false;
             CloseDetails();
         }
 

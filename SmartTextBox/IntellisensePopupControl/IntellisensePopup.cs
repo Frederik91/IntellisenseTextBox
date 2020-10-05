@@ -31,18 +31,8 @@ namespace SmartTextBox.IntellisensePopupControl
             set { SetValue(PopupPlacementRectangleProperty, value); }
         }
 
-
-        public static readonly DependencyProperty IsOpenProperty = DependencyProperty.Register(
-            "IsOpen", typeof(bool), typeof(IntellisensePopup), new PropertyMetadata(default(bool)));
-
-        public bool IsOpen
-        {
-            get { return (bool)GetValue(IsOpenProperty); }
-            set { SetValue(IsOpenProperty, value); }
-        }
-
         private ListView _itemsListView;
-        private Popup _popup;
+        public Popup Popup { get; private set; }
         private IEnumerable<GroupStyle> _groupStyles;
         private bool _disableItemSelectedFlag;
 
@@ -61,7 +51,7 @@ namespace SmartTextBox.IntellisensePopupControl
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (IsOpen && _itemsListView != null)
+            if (Popup.IsOpen && _itemsListView != null)
             {
                 try
                 {
@@ -73,7 +63,7 @@ namespace SmartTextBox.IntellisensePopupControl
                         _itemsListView.SelectedIndex--;
 
                     if (count == 0)
-                        IsOpen = false;
+                        Popup.IsOpen = false;
                 }
                 finally
                 {
@@ -88,14 +78,14 @@ namespace SmartTextBox.IntellisensePopupControl
         public override void OnApplyTemplate()
         {
             _itemsListView = Template.FindName("PART_ItemsListView", this) as ListView;
-            _itemsListView.SelectionChanged += (s, e) => SelectionChanged();
+            _itemsListView.MouseLeftButtonUp += (s, e) => SelectionChanged(e);
             UpdateGroupStyle(_groupStyles);
-            _popup = Template.FindName("PART_Popup", this) as Popup;
+            Popup = Template.FindName("PART_Popup", this) as Popup;
             SubscribeToMoveWithWindow();
             base.OnApplyTemplate();
         }
 
-        private void SelectionChanged()
+        private void SelectionChanged(object a)
         {
             if (_itemsListView?.SelectedItem is null || ItemSelectedAction is null || _disableItemSelectedFlag)
                 return;
@@ -111,20 +101,20 @@ namespace SmartTextBox.IntellisensePopupControl
             {
                 w.LocationChanged += delegate
                 {
-                    var offset = _popup.HorizontalOffset;
+                    var offset = Popup.HorizontalOffset;
                     // "bump" the offset to cause the popup to reposition itself
                     //   on its own
-                    _popup.HorizontalOffset = offset + 1;
-                    _popup.HorizontalOffset = offset;
+                    Popup.HorizontalOffset = offset + 1;
+                    Popup.HorizontalOffset = offset;
                 };
                 // Also handle the window being resized (so the popup's position stays
                 //  relative to its target element if the target element moves upon 
                 //  window resize)
                 w.SizeChanged += delegate
                 {
-                    var offset = _popup.HorizontalOffset;
-                    _popup.HorizontalOffset = offset + 1;
-                    _popup.HorizontalOffset = offset;
+                    var offset = Popup.HorizontalOffset;
+                    Popup.HorizontalOffset = offset + 1;
+                    Popup.HorizontalOffset = offset;
                 };
             }
         }
@@ -132,12 +122,13 @@ namespace SmartTextBox.IntellisensePopupControl
         public void Show(Rect rect)
         {
             PopupPlacementRectangle = rect;
-            IsOpen = true;
+            Popup.IsOpen = true;
         }
 
         public void Close()
         {
-            IsOpen = false;
+            Popup.IsOpen = false;
+            _itemsListView.SelectedIndex = 0;
         }
 
         public object GetSelectedItem()
