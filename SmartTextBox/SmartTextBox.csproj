@@ -13,7 +13,7 @@
     <PackageProjectUrl>https://github.com/Frederik91/IntellisenseTextBox</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Frederik91/IntellisenseTextBox</RepositoryUrl>
     <Authors>Frederik91</Authors>
-    <Version>1.1.2</Version>
+    <Version>1.2.0</Version>
     <Product>IntellisenseTextBox</Product>
     <Description>A text box control with intellisense behavior</Description>
     <PackageTags>TextBox;Intellisense</PackageTags>
