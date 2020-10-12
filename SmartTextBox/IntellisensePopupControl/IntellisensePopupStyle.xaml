@@ -13,7 +13,11 @@
                             BorderThickness="{TemplateBinding BorderThickness}">
                         <Popup PlacementTarget="{TemplateBinding PopupPlacementTarget}" PlacementRectangle="{TemplateBinding PopupPlacementRectangle}" x:Name="PART_Popup" >
                             <Border BorderThickness="1" Background="White">
-                                <ListView ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:IntellisenseTextBox}}}" x:Name="PART_ItemsListView">
+                                <ListView ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:IntellisenseTextBox}}}" 
+                                          x:Name="PART_ItemsListView"
+                                          HorizontalAlignment="Stretch"
+                                          HorizontalContentAlignment="Stretch"
+                                          ItemContainerStyle="{Binding ListItemContainerStyle, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:IntellisenseTextBox}}}" >
                                     <ListView.Style>
                                         <Style TargetType="ListView" BasedOn="{StaticResource {x:Type ListBox}}">
                                             <Setter Property="ItemTemplate" Value="{Binding ListItemTemplate, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:IntellisenseTextBox}}}"/>

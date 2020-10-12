@@ -75,6 +75,15 @@ namespace SmartTextBox.Controls
             set { SetValue(EnableDetailsProperty, value); }
         }
 
+        public static readonly DependencyProperty ListItemContainerStyleProperty = DependencyProperty.Register(
+            "ListItemContainerStyle", typeof(Style), typeof(IntellisenseTextBox), new PropertyMetadata(default(Style)));
+
+        public Style ListItemContainerStyle
+        {
+            get { return (Style) GetValue(ListItemContainerStyleProperty); }
+            set { SetValue(ListItemContainerStyleProperty, value); }
+        }
+
         public static readonly DependencyProperty ItemsSourceProperty = DependencyProperty.Register("ItemsSource", typeof(IEnumerable), typeof(IntellisenseTextBox), new PropertyMetadata(default(IEnumerable)));
 
         public IEnumerable ItemsSource

@@ -27,7 +27,8 @@ namespace SmartTestBox.Demo
         {
             new ItemViewModel("Apple", "Fruit"),
             new ItemViewModel("Banana", "Fruit"),
-            new ItemViewModel("Cake", "Desert")
+            new ItemViewModel("Cake", "Desert"),
+            new ItemViewModel("a long cake", "Desert")
         };
 
         private ICollectionView Suggestions { get; }
